@@ -41,10 +41,10 @@ fn unveil_references<'input>(
             let group_reference = f.group_reference.clone().unwrap_or_default();
             if let false = group_reference.is_empty() {
                 let key = group_reference.split(":").last().unwrap_or_default();
-                let reference = groups.get(key).unwrap();
+                let reference = groups.get(key).expect(&format!("Cant find group {}", group_reference));
                 let typo = reference.typo.clone();
                 if let types::RsEntity::Struct(s2) = *typo {
-                    if let types::RsEntity::Struct(o) = c.types.iter().find(|t| t.name() == s.name).unwrap() {
+                    if let types::RsEntity::Struct(o) = c.types.iter().find(|t| t.name() == s.name).expect(&format!("Cant find type {}", s.name)) {
                         o.fields.borrow_mut().append(&mut s2.fields.borrow_mut());
                     }
                 }
