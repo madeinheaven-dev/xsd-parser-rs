@@ -84,7 +84,7 @@ pub fn parse(text: &str) -> Result<RsFile, ()> {
         }
     }
 
-    Ok(unveil_references(&schema_rs, &schema_rs.groups))
+    Ok(schema_rs)
 }
 
 pub fn parse_files<'input>(
