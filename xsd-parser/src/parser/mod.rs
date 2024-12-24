@@ -25,7 +25,6 @@ pub mod xsd_elements;
 
 use std::collections::HashMap;
 
-use inflector::Inflector;
 use types::Group;
 
 use crate::parser::types::{RsEntity, RsFile};
@@ -41,10 +40,16 @@ fn unveil_references<'input>(
             let group_reference = f.group_reference.clone().unwrap_or_default();
             if let false = group_reference.is_empty() {
                 let key = group_reference.split(":").last().unwrap_or_default();
-                let reference = groups.get(key).expect(&format!("Cant find group {}", group_reference));
+                let reference =
+                    groups.get(key).expect(&format!("Cant find group {}", group_reference));
                 let typo = reference.typo.clone();
                 if let types::RsEntity::Struct(s2) = *typo {
-                    if let types::RsEntity::Struct(o) = c.types.iter().find(|t| t.name() == s.name).expect(&format!("Cant find type {}", s.name)) {
+                    if let types::RsEntity::Struct(o) = c
+                        .types
+                        .iter()
+                        .find(|t| t.name() == s.name)
+                        .expect(&format!("Cant find type {}", s.name))
+                    {
                         o.fields.borrow_mut().append(&mut s2.fields.borrow_mut());
                     }
                 }
@@ -87,31 +92,18 @@ pub fn parse(text: &str) -> Result<RsFile, ()> {
     Ok(schema_rs)
 }
 
-pub fn parse_files<'input>(
-    files: &'input HashMap<String, String>,
-) -> Result<HashMap<String, RsFile<'input>>, ()> {
-    let mut rs_files: HashMap<String, RsFile> = HashMap::new();
-
-    for (k, v) in files {
-        match parse(v) {
-            Ok(f) => {
-                rs_files.insert(k.to_string(), f);
-            }
-            Err(err) => panic!("{} => {:?}", k, err),
-        }
-    }
+pub fn parse_files<'input>(files: &'input Vec<String>) -> Result<Vec<RsFile<'input>>, ()> {
+    let rs_files = files
+        .iter()
+        .map(|rsf| match parse(&rsf) {
+            Ok(f) => f,
+            Err(err) => panic!("{:?}", err),
+        })
+        .collect::<Vec<RsFile>>();
 
     let groups: HashMap<String, Group> =
-        rs_files.iter().flat_map(|rsf| rsf.1.groups.clone()).collect();
+        rs_files.iter().flat_map(|rsf| rsf.groups.clone()).collect();
 
-    let mut res: HashMap<String, RsFile> = HashMap::new();
-
-    for (k, rsf) in rs_files {
-        res.insert(
-            std::path::Path::new(&k).with_extension("").to_str().unwrap().to_snake_case(),
-            unveil_references(&rsf, &groups),
-        );
-    }
-
+    let res = rs_files.iter().map(|rsf| unveil_references(&rsf, &groups)).collect::<Vec<RsFile>>();
     Ok(res)
 }
