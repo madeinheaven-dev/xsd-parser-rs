@@ -2,7 +2,6 @@ use roxmltree::Node;
 
 use crate::parser::{
     constants::attribute,
-    node_parser::parse_node,
     types::{
         Alias, EnumCase, EnumSource, RsEntity, Struct, StructField, StructFieldSource, TypeModifier,
     },
@@ -13,7 +12,7 @@ use crate::parser::{
 const SUPPORTED_CONTENT_TYPES: [ElementType; 2] =
     [ElementType::SimpleType, ElementType::ComplexType];
 
-pub fn parse_element(node: &Node, parent: &Node) -> RsEntity {
+pub fn parse(node: &Node, parent: &Node) -> RsEntity {
     match parent.xsd_type() {
         ElementType::Schema => parse_global_element(node),
         ElementType::All => parse_field_of_sequence(node, parent),
@@ -96,7 +95,7 @@ fn parse_field_of_sequence(node: &Node, _: &Node) -> RsEntity {
         .last()
         .unwrap_or_else(|| panic!("Must have content if no 'type' or 'ref' attribute: {:?}", node));
 
-    let mut field_type = parse_node(&content_node, node);
+    let mut field_type = content_node.parse(node);
 
     field_type.set_name(format!("{}Type", name).as_str());
 
@@ -107,6 +106,7 @@ fn parse_field_of_sequence(node: &Node, _: &Node) -> RsEntity {
         subtypes: vec![field_type],
         source: StructFieldSource::Element,
         type_modifiers: vec![element_modifier(node)],
+        group_reference: None,
     })
 }
 
@@ -126,11 +126,10 @@ fn parse_global_element(node: &Node) -> RsEntity {
         node.children().filter(|n| SUPPORTED_CONTENT_TYPES.contains(&n.xsd_type())).last();
 
     if let Some(content) = content_node {
-        let mut content_entity = parse_node(&content, node);
+        let mut content_entity = content.parse(node);
         content_entity.set_name(name);
         return content_entity;
     }
-
     // No content => empty struct
     RsEntity::Struct(Struct {
         name: name.to_string(),

@@ -4,13 +4,12 @@ use roxmltree::Node;
 
 use crate::parser::{
     constants::attribute,
-    node_parser::parse_node,
     types::{Enum, EnumCase, EnumSource, RsEntity, Struct},
     utils::{attributes_to_fields, enum_to_field, get_documentation, get_parent_name},
     xsd_elements::{ElementType, XsdNode},
 };
 
-pub fn parse_union(union: &Node) -> RsEntity {
+pub fn parse(union: &Node) -> RsEntity {
     let mut cases =
         union.attribute(attribute::MEMBER_TYPES).map(create_enum_cases).unwrap_or_default();
 
@@ -68,7 +67,7 @@ fn create_enum_cases(member_types: &str) -> Vec<EnumCase> {
 }
 
 fn enum_subtype_from_node(node: &Node, parent: &Node, index: usize) -> RsEntity {
-    let mut entity = parse_node(node, parent);
+    let mut entity = node.parse(parent);
     entity.set_name(format!("EnumCaseType_{}", index).as_str());
     entity
 }
@@ -77,7 +76,7 @@ fn enum_subtype_from_node(node: &Node, parent: &Node, index: usize) -> RsEntity 
 mod test {
     use crate::parser::{
         types::RsEntity,
-        union::{create_enum_cases, parse_union},
+        union::{create_enum_cases, parse},
         utils::find_child,
     };
 
@@ -89,7 +88,7 @@ mod test {
     }
 
     #[test]
-    fn test_parse_union() {
+    fn test_parse() {
         let doc = roxmltree::Document::parse(
             r#"
     <xs:schema xmlns:tt="http://www.onvif.org/ver10/schema" xmlns:xs="http://www.w3.org/2001/XMLSchema" targetNamespace="http://www.onvif.org/ver10/schema">
@@ -104,7 +103,7 @@ mod test {
         let simple_type = find_child(&doc.root_element(), "simpleType").unwrap();
         let union = find_child(&simple_type, "union").unwrap();
 
-        let result = parse_union(&union);
+        let result = parse(&union);
 
         match result {
             RsEntity::Enum(en) => {
@@ -118,7 +117,7 @@ mod test {
     }
 
     #[test]
-    fn test_parse_union_with_nested_types() {
+    fn test_parse_with_nested_types() {
         let doc = roxmltree::Document::parse(
             r#"
     <xs:schema xmlns:tt="http://www.onvif.org/ver10/schema" xmlns:xs="http://www.w3.org/2001/XMLSchema" targetNamespace="http://www.onvif.org/ver10/schema">
@@ -143,7 +142,7 @@ mod test {
         let simple_type = find_child(&doc.root_element(), "simpleType").unwrap();
         let union = find_child(&simple_type, "union").unwrap();
 
-        let result = parse_union(&union);
+        let result = parse(&union);
         match result {
             RsEntity::Enum(en) => {
                 assert_eq!(en.cases.len(), 5);
@@ -166,7 +165,7 @@ mod test {
     }
 
     #[test]
-    fn test_parse_union_with_nested_types_and_attributes() {
+    fn test_parse_with_nested_types_and_attributes() {
         let doc = roxmltree::Document::parse(
             r#"
     <xs:schema xmlns:tt="http://www.onvif.org/ver10/schema" xmlns:xs="http://www.w3.org/2001/XMLSchema" targetNamespace="http://www.onvif.org/ver10/schema">
@@ -193,7 +192,7 @@ mod test {
         let simple_type = find_child(&doc.root_element(), "simpleType").unwrap();
         let union = find_child(&simple_type, "union").unwrap();
 
-        let result = parse_union(&union);
+        let result = parse(&union);
         let subtype = match &result {
             RsEntity::Struct(st) => {
                 assert!(st.name.is_empty());

@@ -1,6 +1,6 @@
 use roxmltree::{Document, Node};
 use wsdl_parser::{generator::generate, parser::definitions::Definitions};
-use xsd_parser::{generator::builder::GeneratorBuilder, parser::schema::parse_schema};
+use xsd_parser::{generator::builder::GeneratorBuilder, parser::schema::parse};
 
 mod port_type_to_function;
 
@@ -10,8 +10,7 @@ pub fn generate_wsdl(input: &str) -> String {
     let gen = GeneratorBuilder::default().build();
     let schemas =
         definitions.types().iter().flat_map(|t| t.schemas()).collect::<Vec<Node<'_, '_>>>();
-    let mut code =
-        schemas.iter().map(|f| gen.generate_rs_file(&parse_schema(f))).collect::<Vec<String>>();
+    let mut code = schemas.iter().map(|f| gen.generate_rs_file(&parse(f))).collect::<Vec<String>>();
 
     code.push(generate(&definitions));
     code.join("")

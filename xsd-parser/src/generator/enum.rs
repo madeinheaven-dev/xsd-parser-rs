@@ -72,19 +72,19 @@ pub trait EnumGenerator {
                 // needs to put it differently when multiples namespaces are defined.
                 // namepsaces = {"tns" = "example.com", "tds = "another.example.com"}
                 Some(name) => format!(
-                    "{derives}#[yaserde(prefix = \"{prefix}\", namespaces = {{\"{prefix}\" = \"{uri}\"}})]\n",
+                    "{derives}\n#[yaserde(prefix = \"{prefix}\", namespaces = {{\"{prefix}\" = \"{uri}\"}})]\n",
                     derives = derives,
                     prefix = name,
                     uri = tn.uri()
                 ),
                 // deal with it
                 None => format!(
-                    "{derives}#[yaserde(namespace = \"{uri}\")]\n",
+                    "{derives}\n#[yaserde(namespace = \"{uri}\")]\n",
                     derives = derives,
                     uri = tn.uri()
                 ),
             },
-            None => format!("{derives}#[yaserde()]\n", derives = derives),
+            None => format!("{derives}\n#[yaserde()]\n", derives = derives),
         }
         .into()
     }

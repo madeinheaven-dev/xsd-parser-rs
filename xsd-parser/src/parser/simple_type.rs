@@ -1,13 +1,12 @@
 use roxmltree::Node;
 
 use crate::parser::{
-    node_parser::parse_node,
     types::RsEntity,
     utils::get_documentation,
     xsd_elements::{ElementType, XsdNode},
 };
 
-pub fn parse_simple_type(node: &Node, parent: &Node) -> RsEntity {
+pub fn parse(node: &Node, parent: &Node) -> RsEntity {
     let name = node.attr_name();
 
     assert_eq!(
@@ -24,7 +23,7 @@ pub fn parse_simple_type(node: &Node, parent: &Node) -> RsEntity {
             "Simple types must be defined in one of the following ways: [Union, List, Restriction]",
         );
 
-    let mut content_type = parse_node(&content, node);
+    let mut content_type = content.parse(node);
 
     if let Some(n) = name {
         content_type.set_name(n);
@@ -62,7 +61,7 @@ mod test {
         let schema = doc.root_element();
         let simple_type = find_child(&schema, "simpleType").unwrap();
 
-        match parse_simple_type(&simple_type, &schema) {
+        match parse(&simple_type, &schema) {
             RsEntity::TupleStruct(ts) => {
                 assert_eq!(ts.name, "SomeType");
                 assert_eq!(ts.type_name, "xs:SSD");
@@ -101,7 +100,7 @@ mod test {
         let schema = doc.root_element();
         let simple_type = find_child(&schema, "simpleType").unwrap();
 
-        match parse_simple_type(&simple_type, &schema) {
+        match parse(&simple_type, &schema) {
             RsEntity::TupleStruct(ts) => {
                 assert_eq!(ts.name, "SomeType");
                 assert_eq!(ts.type_name, "SomeTypeEnum");
@@ -137,7 +136,7 @@ mod test {
 
         let schema = doc.root_element();
         let simple_type = find_child(&schema, "simpleType").unwrap();
-        match parse_simple_type(&simple_type, &schema) {
+        match parse(&simple_type, &schema) {
             RsEntity::TupleStruct(ts) => {
                 assert_eq!(ts.name, "SomeType");
                 assert_eq!(ts.type_name, "xs:string");

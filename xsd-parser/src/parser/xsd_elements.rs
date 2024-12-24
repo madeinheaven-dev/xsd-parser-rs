@@ -1,4 +1,4 @@
-use crate::parser::constants::attribute;
+use crate::parser::{constants::attribute, types::RsEntity};
 
 #[derive(Debug, PartialEq)]
 pub enum ElementType {
@@ -80,6 +80,7 @@ pub trait XsdNode {
     fn attr_ref(&self) -> Option<&str>;
     fn attr_use(&self) -> UseType;
     fn attr_value(&self) -> Option<&str>;
+    fn parse(&self, parent: &roxmltree::Node) -> RsEntity;
 }
 
 impl<'a> XsdNode for roxmltree::Node<'a, '_> {
@@ -188,6 +189,32 @@ impl<'a> XsdNode for roxmltree::Node<'a, '_> {
 
     fn attr_value(&self) -> Option<&str> {
         self.attribute(attribute::VALUE)
+    }
+
+    fn parse(&self, parent: &roxmltree::Node) -> RsEntity {
+        use ElementType::*;
+        match self.xsd_type() {
+            All => crate::parser::all::parse(self, parent),
+            Any => crate::parser::any::parse(self),
+            AnyAttribute => crate::parser::any_attribute::parse(self),
+            Attribute => crate::parser::attribute::parse(self, parent),
+            AttributeGroup => crate::parser::attribute_group::parse(self, parent),
+            Choice => crate::parser::choice::parse(self),
+            ComplexContent => crate::parser::complex_content::parse(self),
+            ComplexType => crate::parser::complex_type::parse(self, parent),
+            Element => crate::parser::element::parse(self, parent),
+            Extension(_) => crate::parser::extension::parse(self, parent),
+            Group => crate::parser::group::parse(self, parent),
+            Import | Include => crate::parser::import::parse(self),
+            List => crate::parser::list::parse(self),
+            Restriction(_) => crate::parser::restriction::parse(self, parent),
+            Sequence => crate::parser::sequence::parse(self, parent),
+            SimpleContent => crate::parser::simple_content::parse(self),
+            SimpleType => crate::parser::simple_type::parse(self, parent),
+            Union => crate::parser::union::parse(self),
+
+            _ => unreachable!("Unsupported node:\n {:?}\nparent = {:?}\n", self, self.parent()),
+        }
     }
 }
 

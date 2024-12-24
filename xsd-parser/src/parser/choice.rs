@@ -1,16 +1,15 @@
 use roxmltree::Node;
 
 use crate::parser::{
-    node_parser::parse_node,
     types::{Enum, EnumSource, RsEntity},
     xsd_elements::{ElementType, XsdNode},
 };
 
-pub fn parse_choice(choice: &Node) -> RsEntity {
+pub fn parse(choice: &Node) -> RsEntity {
     let enum_cases = choice
         .children()
         .filter(|n| n.is_element() && n.xsd_type() == ElementType::Element)
-        .map(|n| match parse_node(&n, choice) {
+        .map(|n| match n.parse(choice) {
             RsEntity::EnumCase(case) => case,
             _ => unreachable!("Elements in choice must be a enum variants"),
         })

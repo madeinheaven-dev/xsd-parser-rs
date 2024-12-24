@@ -4,7 +4,6 @@ use roxmltree::Node;
 
 use crate::parser::{
     constants::{attribute, tag},
-    node_parser::parse_node,
     types::{RsEntity, Struct, StructField, StructFieldSource},
     utils::{attribute_groups_to_aliases, attributes_to_fields, get_base, get_documentation},
     xsd_elements::{ElementType, ExtensionType, XsdNode},
@@ -19,7 +18,7 @@ const AVAILABLE_CONTENT_TYPES: [ElementType; 6] = [
     ElementType::Sequence,
 ];
 
-pub fn parse_extension(node: &Node, _: &Node) -> RsEntity {
+pub fn parse(node: &Node, _: &Node) -> RsEntity {
     use ElementType::Extension;
     match node.xsd_type() {
         Extension(ExtensionType::SimpleContent) => simple_content_extension(node),
@@ -72,7 +71,7 @@ fn complex_content_extension(node: &Node) -> RsEntity {
         .last();
 
     if let Some(cont) = content {
-        let mut res = parse_node(&cont, node);
+        let mut res = cont.parse(node);
         if let RsEntity::Struct(s) = &mut res {
             s.fields.borrow_mut().append(&mut fields);
             s.comment = get_documentation(node);

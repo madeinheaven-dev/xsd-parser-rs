@@ -5,7 +5,7 @@ use crate::parser::{
     utils::get_documentation,
 };
 
-pub fn parse_any_attribute(node: &Node) -> RsEntity {
+pub fn parse(node: &Node) -> RsEntity {
     RsEntity::StructField(StructField {
         name: "any_attribute".to_string(),
         type_name: "String".to_string(),

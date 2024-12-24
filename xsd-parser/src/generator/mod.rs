@@ -56,6 +56,7 @@ impl<'input> Generator<'input> {
             EnumCase(ec) => self.enum_case_gen().generate(ec, self),
             Alias(al) => self.alias_gen.as_ref().unwrap().generate(al, self),
             Import(im) => self.import_gen.as_ref().unwrap().generate(im, self),
+            Group(_) => unreachable!("Group is a definition, it can't be rendered"),
         }
     }
 

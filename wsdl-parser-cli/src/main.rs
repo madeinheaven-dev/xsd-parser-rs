@@ -8,7 +8,7 @@ use anyhow::Context;
 use clap::Parser;
 use roxmltree::{Document, Node};
 use wsdl_parser::{generator::generate, parser::definitions::Definitions};
-use xsd_parser::{generator::builder::GeneratorBuilder, parser::schema::parse_schema};
+use xsd_parser::{generator::builder::GeneratorBuilder, parser::schema::parse};
 
 #[derive(Parser)]
 #[clap(name = env!("CARGO_PKG_NAME"))]
@@ -64,8 +64,7 @@ fn process_single_file(input_path: &Path, output_path: Option<&Path>) -> anyhow:
     let gen = GeneratorBuilder::default().build();
     let schemas =
         definitions.types().iter().flat_map(|t| t.schemas()).collect::<Vec<Node<'_, '_>>>();
-    let mut code =
-        schemas.iter().map(|f| gen.generate_rs_file(&parse_schema(f))).collect::<Vec<String>>();
+    let mut code = schemas.iter().map(|f| gen.generate_rs_file(&parse(f))).collect::<Vec<String>>();
 
     code.push(generate(&definitions));
     let code = code.join("");

@@ -11,6 +11,9 @@ pub trait StructFieldGenerator {
         if entity.type_modifiers.contains(&TypeModifier::Empty) {
             return "".into();
         }
+        if !entity.group_reference.clone().unwrap_or_default().is_empty() {
+            return "".into();
+        }
         format!(
             "{comment}{macros}{indent}pub {name}: {typename},",
             comment = self.format_comment(entity, gen),

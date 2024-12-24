@@ -3,7 +3,6 @@ use std::cell::RefCell;
 use roxmltree::Node;
 
 use crate::parser::{
-    node_parser::parse_node,
     types::{RsEntity, Struct, StructField, StructFieldSource},
     utils::{
         attribute_groups_to_aliases, attributes_to_fields, get_documentation, get_parent_name,
@@ -22,7 +21,7 @@ const AVAILABLE_CONTENT_TYPES: [ElementType; 6] = [
     ElementType::SimpleContent,
 ];
 
-pub fn parse_complex_type(node: &Node, parent: &Node) -> RsEntity {
+pub fn parse(node: &Node, parent: &Node) -> RsEntity {
     let name = if parent.xsd_type() == ElementType::Schema {
         node.attr_name()
             .expect("Name required if the complexType element is a child of the schema element")
@@ -37,9 +36,24 @@ pub fn parse_complex_type(node: &Node, parent: &Node) -> RsEntity {
         .filter(|n| n.is_element() && AVAILABLE_CONTENT_TYPES.contains(&n.xsd_type()))
         .last();
 
-    if content.is_none() || content.unwrap().children().filter(|n| n.is_element()).count() == 0 {
+    if content.is_none() {
         //No content (or empty), only attributes
-
+        return RsEntity::Struct(Struct {
+            fields: RefCell::new(fields),
+            attribute_groups: RefCell::new(attribute_groups_to_aliases(node)),
+            comment: get_documentation(node),
+            subtypes: vec![],
+            name: name.to_string(),
+        });
+    }
+    if content.unwrap().children().filter(|n| n.is_element()).count() == 0 {
+        if content.unwrap().xsd_type() == ElementType::Group {
+            fields.append(&mut vec![StructField {
+                name: content.unwrap().attr_ref().unwrap().to_string(),
+                group_reference: Some(content.unwrap().attr_ref().unwrap().to_string()),
+                ..Default::default()
+            }]);
+        }
         return RsEntity::Struct(Struct {
             fields: RefCell::new(fields),
             attribute_groups: RefCell::new(attribute_groups_to_aliases(node)),
@@ -50,7 +64,7 @@ pub fn parse_complex_type(node: &Node, parent: &Node) -> RsEntity {
     }
     let content_node = content.unwrap();
 
-    let mut res = parse_node(&content_node, node);
+    let mut res = content_node.parse(node);
     match &mut res {
         RsEntity::Struct(st) => {
             st.fields.borrow_mut().append(&mut fields);

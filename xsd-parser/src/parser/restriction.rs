@@ -4,7 +4,6 @@ use roxmltree::Node;
 
 use crate::parser::{
     constants::tag,
-    node_parser::parse_node,
     types::{
         Enum, EnumCase, EnumSource, Facet, RsEntity, Struct, StructField, StructFieldSource,
         TupleStruct,
@@ -26,7 +25,7 @@ const AVAILABLE_CONTENT_TYPES: [ElementType; 7] = [
     ElementType::Sequence,       // Not presented in ONVIF
 ];
 
-pub fn parse_restriction(node: &Node, _: &Node) -> RsEntity {
+pub fn parse(node: &Node, _: &Node) -> RsEntity {
     use ElementType::Restriction;
     match node.xsd_type() {
         Restriction(RestrictionType::SimpleType) => simple_type_restriction(node),
@@ -84,7 +83,7 @@ fn complex_content_restriction(node: &Node) -> RsEntity {
         .last();
 
     if let Some(cont) = content {
-        let mut res = parse_node(&cont, node);
+        let mut res = cont.parse(node);
         if let RsEntity::Struct(s) = &mut res {
             s.comment = get_documentation(node);
             s.fields.borrow_mut().append(&mut fields);

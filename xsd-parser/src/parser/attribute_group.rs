@@ -1,13 +1,12 @@
 use roxmltree::Node;
 
 use crate::parser::{
-    node_parser::parse_node,
     types::{Alias, RsEntity, Struct, StructField},
     utils::get_documentation,
     xsd_elements::{ElementType, XsdNode},
 };
 
-pub fn parse_attribute_group(node: &Node, parent: &Node) -> RsEntity {
+pub fn parse(node: &Node, parent: &Node) -> RsEntity {
     if parent.xsd_type() == ElementType::Schema {
         return parse_global_attribute_group(node);
     }
@@ -40,7 +39,7 @@ pub fn attributes_to_fields(node: &Node) -> Vec<StructField> {
         .filter(|n| {
             n.xsd_type() == ElementType::Attribute || n.xsd_type() == ElementType::AnyAttribute
         })
-        .map(|n| match parse_node(&n, node) {
+        .map(|n| match n.parse(node) {
             RsEntity::StructField(sf) => sf,
             _ => unreachable!("Invalid attribute parsing: {:?}", n),
         })

@@ -97,7 +97,7 @@ pub fn yaserde_for_element(
 }
 
 pub fn yaserde_for_flatten_element(indent: &str) -> String {
-    format!("{}#[yaserde(flatten)]\n", indent)
+    format!("{}#[yaserde(flatten = true)]\n", indent)
 }
 
 #[cfg(test)]

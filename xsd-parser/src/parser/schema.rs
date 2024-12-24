@@ -1,13 +1,14 @@
 use roxmltree::Node;
 
 use crate::parser::{
-    node_parser::parse_node,
     types::RsFile,
     utils::target_namespace,
     xsd_elements::{ElementType, XsdNode},
 };
 
-pub fn parse_schema<'input>(schema: &Node<'_, 'input>) -> RsFile<'input> {
+use crate::parser::types;
+
+pub fn parse<'input>(schema: &Node<'_, 'input>) -> RsFile<'input> {
     let mut xsd_namespaces = schema
         .namespaces()
         .filter(|namespace| namespace.uri() == "http://www.w3.org/2001/XMLSchema");
@@ -27,20 +28,30 @@ pub fn parse_schema<'input>(schema: &Node<'_, 'input>) -> RsFile<'input> {
                 n.is_element()
                     && n.xsd_type() != ElementType::Annotation
                     && n.xsd_type() != ElementType::AttributeGroup
+                    && n.xsd_type() != ElementType::Group
             })
-            .map(|node| parse_node(&node, schema))
+            .map(|node| node.parse(schema))
             .collect(),
         attribute_groups: schema
             .children()
             .filter(|n| n.is_element() && n.xsd_type() == ElementType::AttributeGroup)
-            .map(|node| parse_node(&node, schema))
+            .map(|node| node.parse(schema))
+            .collect(),
+        groups: schema
+            .children()
+            .filter(|n| n.is_element() && n.xsd_type() == ElementType::Group)
+            .map(|node| (node.attr_name().unwrap().to_string(), node.parse(schema)))
+            .filter_map(|node| match node {
+                (k, types::RsEntity::Group(g)) => Some((k, g)),
+                _ => None,
+            })
             .collect(),
     }
 }
 
 #[cfg(test)]
 mod test {
-    use crate::parser::schema::parse_schema;
+    use crate::parser::schema::parse;
 
     #[test]
     fn test_single_xsd_ns() {
@@ -56,7 +67,7 @@ mod test {
         )
         .unwrap();
 
-        let res = parse_schema(&doc.root_element());
+        let res = parse(&doc.root_element());
         assert_eq!(res.xsd_ns.unwrap().name().unwrap(), "xs");
     }
 
@@ -76,7 +87,7 @@ mod test {
         )
         .unwrap();
 
-        let res = parse_schema(&doc.root_element());
+        let res = parse(&doc.root_element());
         assert_eq!(res.xsd_ns.unwrap().name().unwrap(), "xs");
     }
 }

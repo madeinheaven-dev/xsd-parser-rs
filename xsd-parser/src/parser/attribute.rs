@@ -1,13 +1,12 @@
 use roxmltree::Node;
 
 use crate::parser::{
-    node_parser::parse_node,
     types::{Alias, RsEntity, Struct, StructField, StructFieldSource, TypeModifier},
     utils::get_documentation,
     xsd_elements::{ElementType, UseType, XsdNode},
 };
 
-pub fn parse_attribute(node: &Node, parent: &Node) -> RsEntity {
+pub fn parse(node: &Node, parent: &Node) -> RsEntity {
     if parent.xsd_type() == ElementType::Schema {
         return parse_global_attribute(node);
     }
@@ -33,6 +32,7 @@ pub fn parse_attribute(node: &Node, parent: &Node) -> RsEntity {
         name,
         source: StructFieldSource::Attribute,
         type_modifiers: vec![type_modifier],
+        group_reference: None,
     })
 }
 
@@ -60,7 +60,7 @@ fn parse_global_attribute(node: &Node) -> RsEntity {
     if let Some(content) =
         node.children().filter(|n| n.is_element() && n.xsd_type() == ElementType::SimpleType).last()
     {
-        let mut entity = parse_node(&content, node);
+        let mut entity = content.parse(node);
         entity.set_name(name);
         return entity;
     }
