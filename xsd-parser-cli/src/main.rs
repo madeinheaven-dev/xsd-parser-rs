@@ -44,6 +44,9 @@ fn process_dir(input_path: &Path, output_path: &Path) -> anyhow::Result<()> {
     }
     for entry in fs::read_dir(input_path)? {
         let path = entry?.path();
+        if !path.ends_with("xsd") {
+            continue;
+        }
         if path.is_dir() {
             process_dir(&path, &output_path.join(path.file_name().unwrap()))?;
         } else {

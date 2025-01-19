@@ -11,8 +11,17 @@ pub trait StructFieldGenerator {
         if entity.type_modifiers.contains(&TypeModifier::Empty) {
             return "".into();
         }
-        if !entity.group_reference.clone().unwrap_or_default().is_empty() {
-            return "".into();
+        if let Some(gr) = &entity.group_reference {
+            if !gr.is_empty() {
+                return format!(
+                    "{comment}{macros}{indent}pub {name}: {typename},",
+                    comment = self.format_comment(entity, gen),
+                    macros = yaserde_for_flatten_element(gen.base().indent().as_str()),
+                    indent = gen.base().indent(),
+                    name = gen.base().format_name(gr),
+                    typename = gen.base().format_type_name(gr, gen),
+                );
+            }
         }
         format!(
             "{comment}{macros}{indent}pub {name}: {typename},",

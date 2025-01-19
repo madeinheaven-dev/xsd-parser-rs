@@ -29,37 +29,6 @@ use types::Group;
 
 use crate::parser::types::{RsEntity, RsFile};
 
-fn unveil_references<'input>(
-    file: &RsFile<'input>,
-    groups: &HashMap<String, types::Group>,
-) -> RsFile<'input> {
-    let c = file.clone();
-
-    file.types.iter().for_each(|t| match t {
-        types::RsEntity::Struct(s) => s.fields.borrow().iter().for_each(|f| {
-            let group_reference = f.group_reference.clone().unwrap_or_default();
-            if let false = group_reference.is_empty() {
-                let key = group_reference.split(":").last().unwrap_or_default();
-                let reference =
-                    groups.get(key).expect(&format!("Cant find group {}", group_reference));
-                let typo = reference.typo.clone();
-                if let types::RsEntity::Struct(s2) = *typo {
-                    if let types::RsEntity::Struct(o) = c
-                        .types
-                        .iter()
-                        .find(|t| t.name() == s.name)
-                        .expect(&format!("Cant find type {}", s.name))
-                    {
-                        o.fields.borrow_mut().append(&mut s2.fields.borrow_mut());
-                    }
-                }
-            }
-        }),
-        _ => (),
-    });
-    c
-}
-
 // FIXME: Actually pass up errors
 #[allow(clippy::result_unit_err)]
 pub fn parse(text: &str) -> Result<RsFile, ()> {
@@ -101,9 +70,5 @@ pub fn parse_files<'input>(files: &'input Vec<String>) -> Result<Vec<RsFile<'inp
         })
         .collect::<Vec<RsFile>>();
 
-    let groups: HashMap<String, Group> =
-        rs_files.iter().flat_map(|rsf| rsf.groups.clone()).collect();
-
-    let res = rs_files.iter().map(|rsf| unveil_references(&rsf, &groups)).collect::<Vec<RsFile>>();
-    Ok(res)
+    Ok(rs_files)
 }
